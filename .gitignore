@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+
+# Rendered output / caches (never meant to be committed - regenerated at runtime)
+**/output/
+**/frames/
+*.gif
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db
+.vscode/

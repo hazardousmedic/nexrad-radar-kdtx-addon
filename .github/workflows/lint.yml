@@ -1,0 +1,23 @@
+name: Lint
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  hadolint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: nexrad-radar-kdtx/Dockerfile
+
+  yamllint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ibiqlik/action-yamllint@v3
+        with:
+          config_data: "{extends: default, rules: {line-length: disable, document-start: disable}}"
