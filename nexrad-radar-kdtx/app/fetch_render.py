@@ -17,6 +17,7 @@ options differ per install.
 import io
 import json
 import logging
+import os
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -104,6 +105,15 @@ LOCAL_WIDTH_KM = float(OPTIONS["local_width_km"])
 LOCAL_HEIGHT_KM = LOCAL_WIDTH_KM / CARD_ASPECT
 KM_PER_DEG_LAT = 111.32
 
+# Lightning strikes, via the add-on's `homeassistant_api: true` config flag -
+# Supervisor auto-injects SUPERVISOR_TOKEN and proxies HA's core REST API at
+# this URL, so no manually-created long-lived access token is needed. Only
+# available when running as a real Supervisor-managed add-on (unset in local
+# dev), so this whole feature degrades to "no strikes drawn" gracefully.
+SUPERVISOR_TOKEN = os.environ.get("SUPERVISOR_TOKEN")
+HA_API_BASE = "http://supervisor/core/api"
+STRIKE_MAX_AGE_MIN = 15  # strikes older than this are no longer drawn
+
 
 def list_latest_keys(product: str, count: int = 3):
     """Return up to `count` most recent object keys for SITE/product, newest last."""
@@ -127,7 +137,45 @@ def fetch_key(key: str) -> bytes:
     return resp.content
 
 
-def render_frame(n0b_bytes: bytes, nst_bytes: bytes | None, out_path: Path):
+def fetch_lightning_strikes():
+    """Return (lon, lat, age_seconds) for recent Blitzortung strikes.
+
+    Reads HA's `geo_location.lightning_strike_*` entities (created by the
+    already-installed `mrk-its/homeassistant-blitzortung` integration) via
+    Supervisor's HA API proxy. Best-effort: any failure (API unreachable,
+    no SUPERVISOR_TOKEN, unexpected shape) just means no strikes are drawn
+    this cycle, same philosophy as the storm-track overlay.
+    """
+    if not SUPERVISOR_TOKEN:
+        return []
+    try:
+        resp = requests.get(
+            f"{HA_API_BASE}/states",
+            headers={"Authorization": f"Bearer {SUPERVISOR_TOKEN}"},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        now = datetime.now(timezone.utc)
+        strikes = []
+        for ent in resp.json():
+            attrs = ent.get("attributes", {})
+            if attrs.get("source") != "blitzortung":
+                continue
+            pub = attrs.get("publication_date")
+            lat, lon = attrs.get("latitude"), attrs.get("longitude")
+            if not pub or lat is None or lon is None:
+                continue
+            age = (now - datetime.fromisoformat(pub)).total_seconds()
+            if age > STRIKE_MAX_AGE_MIN * 60:
+                continue
+            strikes.append((lon, lat, age))
+        return strikes
+    except Exception as exc:  # noqa: BLE001 - overlay is best-effort only
+        log.warning("lightning fetch skipped: %s", exc)
+        return []
+
+
+def render_frame(n0b_bytes: bytes, nst_bytes: bytes | None, strikes: list, out_path: Path):
     f = Level3File(io.BytesIO(n0b_bytes))
     datadict = f.sym_block[0][0]
     data = f.map_data(datadict["data"])
@@ -211,6 +259,13 @@ def render_frame(n0b_bytes: bytes, nst_bytes: bytes | None, out_path: Path):
         except Exception as exc:  # noqa: BLE001 - overlay is best-effort only
             log.warning("storm-track overlay skipped: %s", exc)
 
+    # Lightning strikes - drawn as a fading marker so recent strikes stand
+    # out from ones about to age out (see STRIKE_MAX_AGE_MIN).
+    for lon, lat, age_s in strikes:
+        alpha = max(0.15, 1 - age_s / (STRIKE_MAX_AGE_MIN * 60))
+        ax.plot(lon, lat, marker="x", markersize=7, markeredgewidth=2,
+                color="#FFD84D", alpha=alpha, transform=ccrs.PlateCarree())
+
     # Timestamp imprint, bottom-right - uses the radar's own scan time
     # (f.metadata['prod_time'], a naive UTC datetime) rather than wall-clock
     # time, so it reflects when the data was actually collected.
@@ -268,8 +323,9 @@ def main():
                 nst_keys = list_latest_keys("NST", 1)
                 n0b_bytes = fetch_key(latest)
                 nst_bytes = fetch_key(nst_keys[-1]) if nst_keys else None
+                strikes = fetch_lightning_strikes()
                 frame_path = FRAMES_DIR / f"{latest}.png"
-                render_frame(n0b_bytes, nst_bytes, frame_path)
+                render_frame(n0b_bytes, nst_bytes, strikes, frame_path)
 
                 existing = sorted(FRAMES_DIR.glob("*.png"))
                 for stale in existing[:-MAX_FRAMES]:

@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.0
+
+- Added live lightning strike overlay on the radar map. Reads
+  `geo_location.lightning_strike_*` entities from the
+  [Blitzortung](https://github.com/mrk-its/homeassistant-blitzortung)
+  integration (installed separately, not bundled) via Home Assistant's own
+  REST API — set `homeassistant_api: true` in this add-on's config, which
+  makes Supervisor auto-inject a `SUPERVISOR_TOKEN` and proxy HA's API, so
+  no manually-created long-lived access token is required. Strikes newer
+  than `STRIKE_MAX_AGE_MIN` (15 min) are drawn as yellow `x` markers that
+  fade out as they age; the feature is entirely optional and silently
+  no-ops (no strikes drawn) if Blitzortung isn't installed or the API call
+  fails.
+
 ## 1.1.2
 
 - Hoisted the `COASTLINE`/`LAKES` map features to module-level constants

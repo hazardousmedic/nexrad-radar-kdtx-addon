@@ -1,11 +1,12 @@
 name: "NEXRAD Radar Loop"
-version: "1.1.2"
+version: "1.2.0"
 slug: "nexrad_radar_loop"
-description: "Self-hosted live NEXRAD radar loop (county/state/province map lines, storm-track forecast lines) for any US radar site and location, sized for a Lovelace iframe card"
+description: "Self-hosted live NEXRAD radar loop (county/state/province map lines, storm-track forecast lines, live lightning strikes) for any US radar site and location, sized for a Lovelace iframe card"
 arch:
   - amd64
 startup: application
 boot: auto
+homeassistant_api: true
 ports:
   8600/tcp: 8600
 ports_description:

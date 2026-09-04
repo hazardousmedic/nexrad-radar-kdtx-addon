@@ -1,9 +1,10 @@
 # NEXRAD Radar Loop
 
 A self-hosted Home Assistant add-on that renders a live, looping NEXRAD weather
-radar image — base reflectivity plus storm-track forecast lines, with
-county/state/province map context — for **any** US radar site and location.
-Built to sit in a Lovelace `iframe` card on a kiosk-style dashboard.
+radar image — base reflectivity plus storm-track forecast lines and live
+lightning strikes, with county/state/province map context — for **any** US
+radar site and location. Built to sit in a Lovelace `iframe` card on a
+kiosk-style dashboard.
 
 It's a from-scratch renderer, not a hotlinked embed: it polls NOAA's public
 Open Data feed directly and draws the image itself with
@@ -24,6 +25,9 @@ and Matplotlib.
 - Keeps a rolling ~1-hour buffer (12 frames) as a looping animated GIF, plus
   a tiny auto-refreshing HTML page, served on port 8600.
 - Imprints the radar's own scan time (not wall-clock time) on each frame.
+- Optionally overlays live lightning strikes (fading `x` markers, most recent
+  15 minutes) if the [Blitzortung](https://github.com/mrk-its/homeassistant-blitzortung)
+  HACS integration is installed — see below.
 
 ## Installation
 
@@ -48,6 +52,18 @@ and Matplotlib.
 **Center on your home, not the radar tower.** Radar sites have significant
 near-field ground clutter right at the tower — centering the view there
 instead of your actual location will mostly show clutter, not real weather.
+
+## Lightning strikes (optional)
+
+If you have the [Blitzortung](https://github.com/mrk-its/homeassistant-blitzortung)
+HACS integration installed and configured (it creates
+`geo_location.lightning_strike_*` entities for nearby strikes), this add-on
+draws them automatically — no extra configuration needed. It reads those
+entities through Home Assistant's own API via the `homeassistant_api: true`
+add-on option, which makes Supervisor inject credentials automatically; you
+never need to create or paste in an access token yourself. If Blitzortung
+isn't installed, this silently does nothing — no errors, just no strikes
+drawn.
 
 ## Known limitations
 
