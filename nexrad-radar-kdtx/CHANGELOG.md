@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.2
+
+- Hoisted the `COASTLINE`/`LAKES` map features to module-level constants
+  (built once at import time) instead of recreating them via `.with_scale()`
+  on every render call. Precautionary hardening against the same class of
+  bug as 1.1.1, not a confirmed second leak — cartopy caches Natural Earth
+  geometries internally by name/category/scale, so this mainly avoids
+  needless per-render object construction and matches the pattern already
+  used correctly for `STATES_PROVINCES`.
+
 ## 1.1.1
 
 - Fixed a file-descriptor leak in `rebuild_loop()`: `Image.open()` on each

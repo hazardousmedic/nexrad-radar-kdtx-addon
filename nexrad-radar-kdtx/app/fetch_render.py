@@ -76,10 +76,16 @@ if HOME_LAT == 0.0 and HOME_LON == 0.0:
         "Rendering will center on the equator/prime meridian until you do."
     )
 
+# Built once at import time, not per-render: cartopy/pyshp open shapefile
+# file handles on each Feature construction, and recreating these in the
+# render hot loop (every ~5 min, forever) is the same "unclosed resource in
+# a hot loop" pattern that caused the Image.open() leak in rebuild_loop().
 STATES_PROVINCES = cfeature.NaturalEarthFeature(
     category="cultural", name="admin_1_states_provinces_lines", scale="10m",
     facecolor="none",
 )
+COASTLINE = cfeature.COASTLINE.with_scale("10m")
+LAKES = cfeature.LAKES.with_scale("10m")
 
 BUCKET = "https://unidata-nexrad-level3.s3.amazonaws.com/"
 OUTPUT_DIR = Path("/data/output")  # HA add-on persistent storage, survives rebuilds/updates
@@ -152,11 +158,11 @@ def render_frame(n0b_bytes: bytes, nst_bytes: bytes | None, out_path: Path):
     # and coastlines. Sized for a zoomed-in local view.
     ax.add_feature(USCOUNTIES, linewidth=0.6, edgecolor="#3A4552")
     ax.add_feature(STATES_PROVINCES, linewidth=1.4, edgecolor="#8C99A6")
-    ax.add_feature(cfeature.COASTLINE.with_scale("10m"), linewidth=1.0, edgecolor="#5FD8C4")
+    ax.add_feature(COASTLINE, linewidth=1.0, edgecolor="#5FD8C4")
     # facecolor="none" here is deliberate: an opaque lake fill drawn after
     # the pcolormesh would blank out any real radar returns over water -
     # relevant for any site near a large lake (e.g. the Great Lakes).
-    ax.add_feature(cfeature.LAKES.with_scale("10m"), facecolor="none", edgecolor="#5FD8C4", linewidth=1.0)
+    ax.add_feature(LAKES, facecolor="none", edgecolor="#5FD8C4", linewidth=1.0)
 
     lat_half_deg = (LOCAL_HEIGHT_KM / 2) / KM_PER_DEG_LAT
     lon_half_deg = (LOCAL_WIDTH_KM / 2) / (KM_PER_DEG_LAT * np.cos(np.deg2rad(HOME_LAT)))
