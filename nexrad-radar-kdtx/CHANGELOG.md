@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.1
+
+- Fixed a file-descriptor leak in `rebuild_loop()`: `Image.open()` on each
+  frame was never closed, so after enough render cycles the container hit
+  its open-file limit (`OSError: [Errno 24] Too many open files`) and every
+  subsequent S3 poll failed, freezing the loop indefinitely. Frame images
+  are now opened in a `with` block so the file handle is released after
+  each conversion.
+
 ## 1.1.0
 
 - Made location fully configurable: `radar_site`, `home_latitude`,

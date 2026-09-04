@@ -224,7 +224,10 @@ def rebuild_loop():
     frames = sorted(FRAMES_DIR.glob("*.png"))[-MAX_FRAMES:]
     if not frames:
         return
-    images = [Image.open(p).convert("RGB") for p in frames]
+    images = []
+    for p in frames:
+        with Image.open(p) as img:
+            images.append(img.convert("RGB"))
     images[0].save(
         OUTPUT_DIR / "loop.gif",
         save_all=True,
