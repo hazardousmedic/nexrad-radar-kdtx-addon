@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0
+
+- Switched the reflectivity colortable from `NWSStormClearReflectivity` to
+  the classic `NWSReflectivity` scale (5 dBZ steps, 5-80 dBZ) that
+  RadarScope/GRLevel3/most consumer radar apps use for precip-mode
+  products. The clear-air table was tuned for a much fainter dynamic
+  range, which compressed real storm cores into green/cyan shades instead
+  of the yellow/orange/red they should be - storms looked washed out and
+  less defined than reference apps as a result.
+
 ## 1.2.3
 
 - Increased the lightning bolt marker's `scatter()` size from `s=110` to

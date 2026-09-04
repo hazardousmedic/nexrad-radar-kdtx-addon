@@ -199,11 +199,16 @@ def render_frame(n0b_bytes: bytes, nst_bytes: bytes | None, strikes: list, out_p
     cent_lon, cent_lat = f.lon, f.lat
     xlocs, ylocs = azimuth_range_to_lat_lon(az, rng, cent_lon, cent_lat)
 
-    # NWSStormClearReflectivity (official MetPy example's choice for N0Q/N0B)
-    # correctly reserves its low end for "no data"/clear air; still mask
-    # anything below a light-rain noise floor so clear-air noise doesn't
-    # paint the whole scan area.
-    ref_norm, ref_cmap = colortables.get_with_steps("NWSStormClearReflectivity", -20, 0.5)
+    # Classic 15-level NWS base reflectivity legend (5 dBZ steps from 5-80),
+    # matching what RadarScope/GRLevel3/most consumer radar apps show for
+    # precip-mode products like N0B. NWSStormClearReflectivity (tried
+    # first) is tuned for clear-air mode's much fainter dynamic range
+    # (roughly -20 to +30 dBZ) - using it on precip-mode data compressed
+    # real storm cores (40-65+ dBZ) into green/cyan shades instead of the
+    # yellow/orange/red they should be, making storms look washed out and
+    # less defined than reference apps. The 5 dBZ start matches the mask
+    # threshold below, so nothing is lost off the bottom of the scale.
+    ref_norm, ref_cmap = colortables.get_with_steps("NWSReflectivity", 5, 5)
     ref_cmap.set_bad(color=(0, 0, 0, 0))
     masked = np.ma.masked_less(data, 5)
 
