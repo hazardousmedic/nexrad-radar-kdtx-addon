@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1
+
+- Lightning strikes now render as white lightning-bolt markers instead of
+  yellow `x` marks (a custom `matplotlib.path.Path` polygon, since
+  matplotlib has no built-in bolt marker).
+
 ## 1.2.0
 
 - Added live lightning strike overlay on the radar map. Reads

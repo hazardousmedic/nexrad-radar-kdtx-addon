@@ -30,6 +30,8 @@ import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
 import numpy as np
 import requests
+# Aliased: this module already imports pathlib.Path for filesystem paths.
+from matplotlib.path import Path as MarkerPath
 from metpy.calc import azimuth_range_to_lat_lon
 from metpy.io import Level3File
 from metpy.plots import colortables, USCOUNTIES
@@ -113,6 +115,15 @@ KM_PER_DEG_LAT = 111.32
 SUPERVISOR_TOKEN = os.environ.get("SUPERVISOR_TOKEN")
 HA_API_BASE = "http://supervisor/core/api"
 STRIKE_MAX_AGE_MIN = 15  # strikes older than this are no longer drawn
+
+# Matplotlib has no built-in lightning-bolt marker, so this is a hand-drawn
+# zigzag polygon (unit-scale, origin-centered) used as a custom marker path.
+_BOLT_VERTICES = [
+    (0.35, 1.0), (-0.45, 0.05), (-0.05, 0.05),
+    (-0.35, -1.0), (0.45, -0.05), (0.05, -0.05), (0.35, 1.0),
+]
+_BOLT_CODES = [MarkerPath.MOVETO] + [MarkerPath.LINETO] * 5 + [MarkerPath.CLOSEPOLY]
+BOLT_MARKER = MarkerPath(_BOLT_VERTICES, _BOLT_CODES)
 
 
 def list_latest_keys(product: str, count: int = 3):
@@ -259,12 +270,14 @@ def render_frame(n0b_bytes: bytes, nst_bytes: bytes | None, strikes: list, out_p
         except Exception as exc:  # noqa: BLE001 - overlay is best-effort only
             log.warning("storm-track overlay skipped: %s", exc)
 
-    # Lightning strikes - drawn as a fading marker so recent strikes stand
-    # out from ones about to age out (see STRIKE_MAX_AGE_MIN).
+    # Lightning strikes - drawn as fading white bolt markers so recent
+    # strikes stand out from ones about to age out (see STRIKE_MAX_AGE_MIN).
+    # scatter() (not plot()) is used because it fills custom marker Paths
+    # solid; plot() would only stroke the polygon's outline.
     for lon, lat, age_s in strikes:
         alpha = max(0.15, 1 - age_s / (STRIKE_MAX_AGE_MIN * 60))
-        ax.plot(lon, lat, marker="x", markersize=7, markeredgewidth=2,
-                color="#FFD84D", alpha=alpha, transform=ccrs.PlateCarree())
+        ax.scatter(lon, lat, marker=BOLT_MARKER, s=110, color="white",
+                   linewidths=0, alpha=alpha, transform=ccrs.PlateCarree())
 
     # Timestamp imprint, bottom-right - uses the radar's own scan time
     # (f.metadata['prod_time'], a naive UTC datetime) rather than wall-clock
