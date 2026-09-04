@@ -158,6 +158,8 @@ def fetch_lightning_strikes():
     this cycle, same philosophy as the storm-track overlay.
     """
     if not SUPERVISOR_TOKEN:
+        log.warning("lightning overlay disabled: SUPERVISOR_TOKEN not set "
+                    "(homeassistant_api: true missing, or not running under Supervisor)")
         return []
     try:
         resp = requests.get(
@@ -180,6 +182,7 @@ def fetch_lightning_strikes():
             if age > STRIKE_MAX_AGE_MIN * 60:
                 continue
             strikes.append((lon, lat, age))
+        log.info("lightning: %d strikes within %d min", len(strikes), STRIKE_MAX_AGE_MIN)
         return strikes
     except Exception as exc:  # noqa: BLE001 - overlay is best-effort only
         log.warning("lightning fetch skipped: %s", exc)

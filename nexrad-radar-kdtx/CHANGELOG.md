@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.2
+
+- Added diagnostic logging to `fetch_lightning_strikes()`: logs a warning
+  if `SUPERVISOR_TOKEN` is missing (lightning overlay silently disabled),
+  and an info line with the strike count found each cycle. Added after
+  strikes weren't appearing on a live render with no errors in the logs -
+  the previous silent-degrade design made it impossible to tell whether
+  the token was missing or zero strikes were genuinely in range.
+
 ## 1.2.1
 
 - Lightning strikes now render as white lightning-bolt markers instead of
