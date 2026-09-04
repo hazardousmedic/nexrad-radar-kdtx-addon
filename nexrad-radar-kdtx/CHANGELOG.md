@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.3
+
+- Increased the lightning bolt marker's `scatter()` size from `s=110` to
+  `s=400` (~1.9x linear scale) - the markers were rendering correctly but
+  too small to read clearly against the busy reflectivity background.
+
 ## 1.2.2
 
 - Added diagnostic logging to `fetch_lightning_strikes()`: logs a warning

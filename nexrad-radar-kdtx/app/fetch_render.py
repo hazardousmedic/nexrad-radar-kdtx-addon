@@ -279,7 +279,7 @@ def render_frame(n0b_bytes: bytes, nst_bytes: bytes | None, strikes: list, out_p
     # solid; plot() would only stroke the polygon's outline.
     for lon, lat, age_s in strikes:
         alpha = max(0.15, 1 - age_s / (STRIKE_MAX_AGE_MIN * 60))
-        ax.scatter(lon, lat, marker=BOLT_MARKER, s=110, color="white",
+        ax.scatter(lon, lat, marker=BOLT_MARKER, s=400, color="white",
                    linewidths=0, alpha=alpha, transform=ccrs.PlateCarree())
 
     # Timestamp imprint, bottom-right - uses the radar's own scan time

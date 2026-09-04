@@ -1,5 +1,5 @@
 name: "NEXRAD Radar Loop"
-version: "1.2.2"
+version: "1.2.3"
 slug: "nexrad_radar_loop"
 description: "Self-hosted live NEXRAD radar loop (county/state/province map lines, storm-track forecast lines, live lightning strikes) for any US radar site and location, sized for a Lovelace iframe card"
 arch:
